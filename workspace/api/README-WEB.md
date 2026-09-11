@@ -87,6 +87,79 @@ curl -X POST http://127.0.0.1:8700/v1/search \
 | POST | `/v1/original/batch` | 批量转原图 |
 | GET | `/v1/image?url=&mode=` | 图片字节流，可直接作 `img src` |
 | POST | `/v1/download` | 搜索并下载到服务端 |
+| POST | `/v1/relogin` | 重新扫码登录，返回二维码 base64 |
+| GET | `/v1/relogin/status` | 查询扫码登录进度 |
+| GET | `/v1/relogin/qr` | 二维码原始 PNG，可直接 `img src` |
+
+---
+
+## cookie 失效后重新登录
+
+cookie 存在 profile 目录里，正常情况下有效期很长，但会过期或被登出。
+**服务会自动识别并给出明确指引，不会静默返回空结果。**
+
+### 自动识别
+
+每次搜索都会顺带捕获页面自然发出的 `user/me` 响应
+（在同一个浏览器会话内，**零额外开销**），据此判定登录态：
+
+- 正常：响应里 `logged_in=true`、`guest=false`、带 `user_id`
+- 失效：搜索无任何结果 **且** `user/me` 返回 `guest=true`
+  → 抛出 `WebError`，API 返回 **HTTP 401**
+
+401 响应形如：
+
+```json
+{
+  "status": 401,
+  "detail": "登录态已失效（cookie 过期或被登出）。请重新扫码：运行 python login_live.py 900，或在 API 上调用 POST /v1/relogin 获取新二维码。",
+  "relogin": "POST /v1/relogin 获取新二维码，或运行 python login_live.py 900"
+}
+```
+
+### 重新扫码（API 方式）
+
+```bash
+# 1) 发起登录，拿二维码
+curl -X POST http://127.0.0.1:8700/v1/relogin \
+  -H "Content-Type: application/json" -d '{}'
+
+# 响应（qr_png_data_uri 可直接塞进 <img src>）：
+# {
+#   "status": "running",
+#   "has_qr": true,
+#   "qr_url": "...",
+#   "qr_png": "...base64...",
+#   "qr_png_data_uri": "data:image/png;base64,...",
+#   "poll": "/v1/relogin/status"
+# }
+
+# 2) 扫码后查进度
+curl http://127.0.0.1:8700/v1/relogin/status
+# {"status":"done","user_id":"625d...","elapsed":31.2}
+```
+
+更省事的做法：浏览器直接打开
+`http://127.0.0.1:8700/v1/relogin/qr`，就是一张二维码图片，
+扫完再刷新 `/v1/relogin/status`。
+
+`status` 取值：`idle` / `starting` / `running` / `done` / `error`。
+登录成功后会自动清空搜索缓存（旧登录态的结果不再可信）。
+
+### 重新扫码（命令行方式）
+
+```powershell
+cd D:\PYxiangmu\WKnx\workspace\api
+python login_live.py 900
+```
+
+打印 ASCII 二维码（也能存成 `web_qrcode.png`），
+每 90 秒自动刷新，不会因为二维码过期白等。
+
+### 自动化建议
+
+消费方可以在收到 401 时自动调 `/v1/relogin` 取二维码推给运维，
+或干脆在启动脚本里先查 `/health` 的 `logged_in` 字段做预检。
 
 ### mode 参数
 
