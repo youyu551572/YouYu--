@@ -1,0 +1,26 @@
+﻿import sys, json, time, requests
+sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+B = "http://127.0.0.1:8700"
+S = requests.Session()
+print("=" * 68)
+print("重新登录端点验证")
+print("=" * 68)
+t0 = time.time()
+r = S.post(B + "/v1/relogin", json={"timeout": 400, "include_image": False}, timeout=180)
+print("[1] POST /v1/relogin   HTTP %s  (%.1fs)" % (r.status_code, time.time()-t0))
+j = r.json()
+for k in ("status","has_qr","user_id","error","hint"):
+    print("      %-10s %s" % (k, str(j.get(k))[:70]))
+print("      qr_url     %s" % str(j.get("qr_url"))[:90])
+print()
+print("[2] GET /v1/relogin/qr")
+r = S.get(B + "/v1/relogin/qr", timeout=60)
+print("      HTTP %s  ct=%s  bytes=%d" % (r.status_code, r.headers.get("Content-Type"), len(r.content)))
+if r.status_code == 200:
+    print("      magic=%s" % r.content[:8].hex())
+    open(r"D:\PYxiangmu\WKnx\workspace\capture\relogin_qr.png","wb").write(r.content)
+    print("      已存 relogin_qr.png")
+print()
+print("[3] GET /v1/relogin/status")
+r = S.get(B + "/v1/relogin/status", timeout=60)
+print("      HTTP %s  %s" % (r.status_code, json.dumps(r.json(), ensure_ascii=False)[:250]))

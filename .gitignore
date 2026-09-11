@@ -1,0 +1,71 @@
+# ============================================================
+# 小红书搜索/原图 API  —  .gitignore
+# 原则：代码与文档入库；凭据、样本、大文件、抓包数据一律不入库
+# ============================================================
+
+# --- 凭据：浏览器 profile（内含登录 cookie，绝不入库）---
+**/chrome-profile-*/
+workspace/chrome-profile-xhs/
+workspace/chrome-profile-guest/
+**/Cookies
+**/Login Data
+**/Local State
+
+# --- 凭据：抓包产物与证书 ---
+workspace/capture/*.jsonl
+workspace/capture/*.json
+workspace/capture/*.txt
+workspace/capture/*.png
+workspace/capture/*.har
+workspace/capture/*.0
+**/*.pem
+**/*.key
+**/login_ok.json
+
+# --- 凭据：mitmproxy 流量文件（含 shield 签名与 cookie）---
+**/*.flows
+**/*.flow
+
+# --- 大体积实验产物（结论已写入文档，原始字节不必入库）---
+workspace/capture/imgtest/
+workspace/capture/testpic.jpg
+workspace/capture/ui_*.xml
+workspace/capture/*.bin
+
+# --- 样本与工具链（体积大，按需本地准备）---
+samples/
+tools/
+workspace/xhs-jadx/
+workspace/apktool/
+
+# --- 下载产物（可达数 GB）---
+workspace/downloads/
+
+# --- DSH 本地配置 ---
+.dsh/
+
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+build/
+dist/
+.pytest_cache/
+.mypy_cache/
+
+# --- 编辑器 / 系统 ---
+.vscode/
+.idea/
+*.swp
+Thumbs.db
+Desktop.ini
+ehthumbs.db
+$RECYCLE.BIN/
+
+# --- 日志与临时 ---
+*.log
+*.part
+*.tmp
+~$*
